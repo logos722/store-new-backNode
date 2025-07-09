@@ -13,6 +13,10 @@ exports.getById = async (req, res) => {
     if (!prod) {
       return res.status(404).json({ error: "Product not found" });
     }
+    const imageUrl = prod.image
+      ? `/images/${prod.image.replace(/^\//, "")}`
+      : null;
+
     res.json({
       id: prod.externalId,
       name: prod.name,
@@ -20,7 +24,7 @@ exports.getById = async (req, res) => {
       fullName: prod.fullName,
       price: prod.price,
       stock: prod.quantity,
-      image: prod.image || null,
+      image: imageUrl,
       characteristics: {
         Вес: String(prod.weight),
         ВидНоменклатуры: prod._doc["ЗначенияРеквизитов"]?.ВидНоменклатуры, // если сохраняли

@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const path = require("path");
 const cors = require("cors");
 const connectDB = require("./config/db");
 
@@ -8,8 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// статика для картинок
-// app.use("/images", express.static(path.join(__dirname, "public", "images")));
+app.use("/images", express.static(path.join(__dirname, "public", "images")));
 
 // Подключаем БД
 connectDB();

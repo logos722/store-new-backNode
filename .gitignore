@@ -7,6 +7,11 @@ pnpm-debug.log*
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+/data/
+data/
+public/
+
+
 
 # Build
 dist/

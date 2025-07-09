@@ -13,6 +13,7 @@ const ProductSchema = new mongoose.Schema({
   quantity: { type: Number },
   description: { type: String },
   inStock: { type: Boolean, default: true },
+  image: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 
