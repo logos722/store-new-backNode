@@ -17,5 +17,5 @@ FROM node:18-alpine AS prod
 WORKDIR /app
 COPY --from=builder /app ./
 ENV NODE_ENV=production
-EXPOSE 3000
-CMD ["node", "src/index.js"]
+EXPOSE 5000
+CMD ["node", "app.js"]
