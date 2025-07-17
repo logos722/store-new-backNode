@@ -33,7 +33,7 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/logos722/store-new-back:latest
+            ${{ env.REGISTRY }}logos722/store-new-backnode:latest
 
   deploy:
     needs: build-and-push
