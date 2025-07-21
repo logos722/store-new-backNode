@@ -95,7 +95,9 @@ exports.getByCategory = async (req, res) => {
       name: p.name,
       description: p.description,
       price: p.price,
-      image: p.image ? `/images/${p.image.replace(/^\//, "")}` : null,
+      image: p.image
+        ? `http://backend:5000/images/${p.image.replace(/^\//, "")}`
+        : null,
       stock: p.quantity,
       inStock: p.inStock,
     }));
