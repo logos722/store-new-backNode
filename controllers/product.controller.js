@@ -14,7 +14,7 @@ exports.getById = async (req, res) => {
       return res.status(404).json({ error: "Product not found" });
     }
     const imageUrl = prod.image
-      ? `/images/${prod.image.replace(/^\//, "")}`
+      ? `http://backend:5000/images/${prod.image.replace(/^\//, "")}`
       : null;
 
     res.json({
