@@ -9,10 +9,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use(
-  "http://backend:5000/images",
-  express.static(path.join(__dirname, "public", "images"))
-);
+app.use("/images", express.static(path.join(__dirname, "public", "images")));
 
 // Подключаем БД
 connectDB();

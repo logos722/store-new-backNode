@@ -15,5 +15,5 @@ exports.getImageUrl = (req, res) => {
     return res.status(404).json({ error: "File not found" });
   }
   // отдадим фронту URL, по которому Express будет отдавать файл
-  res.json({ imageUrl: `/images/${imgPath}` });
+  res.json({ imageUrl: `http://backend:5000/images/${imgPath}` });
 };
