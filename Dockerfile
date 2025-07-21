@@ -9,6 +9,8 @@ FROM node:18-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 # Если у вас есть сборка (TS, Webpack и т.п.) — здесь её вызвать:
 # RUN npm run build
 

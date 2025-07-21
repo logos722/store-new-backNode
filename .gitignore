@@ -6,9 +6,18 @@ yarn-error.log*
 pnpm-debug.log*
 yarn.lock
 pnpm-lock.yaml
-/data/
-data/
-public/
+
+data/*
+# игнорируем весь public/images
+public/images/*
+!data/.gitkeep
+# но разрешаем саму папку import_files и файл .gitkeep в ней
+!public/images/import_files/
+!public/images/import_files/.gitkeep
+
+# по‑прежнему игнорируем всё остальное в import_files
+public/images/import_files/*
+!public/images/import_files/.gitkeep
 
 
 

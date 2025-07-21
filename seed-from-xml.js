@@ -23,8 +23,16 @@ async function run() {
   });
 
   // Парсим XML-файлы
-  const catalogData = await parseXmlFile("./data/catalog.xml");
+  const catalogData = await parseXmlFile("./data/import.xml");
   const offersData = await parseXmlFile("./data/offers.xml");
+
+  // Собираем список ID свойств категории из классификатора
+  const propsDefs =
+    catalogData.КоммерческаяИнформация.Классификатор.Свойства.Свойство;
+  const propsArr = Array.isArray(propsDefs) ? propsDefs : [propsDefs];
+  const categoryPropIds = propsArr
+    .filter((def) => def.Наименование === "Категория")
+    .map((def) => def.Ид);
 
   // Извлекаем массивы товаров и предложений
   const itemsNode = catalogData.КоммерческаяИнформация.Каталог.Товары.Товар;
@@ -63,7 +71,17 @@ async function run() {
       )?.Значение ||
       null;
 
-    console.log("image", image);
+    let category = null;
+    const vals = p.ЗначенияСвойств?.ЗначенияСвойства;
+    if (vals) {
+      const valsArr = Array.isArray(vals) ? vals : [vals];
+      const catVal = valsArr.find(
+        (v) => categoryPropIds.includes(v.Ид) && v.Значение
+      );
+      if (catVal && catVal.Значение) {
+        category = catVal.Значение;
+      }
+    }
 
     return {
       externalId: p.Ид,
@@ -82,6 +100,7 @@ async function run() {
       currency: o.Цены?.Цена?.Валюта || null,
       quantity,
       image,
+      category,
     };
   });
 

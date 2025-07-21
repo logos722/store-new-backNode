@@ -16,6 +16,8 @@ connectDB();
 
 // Импорт роутов
 
+// в app.js
+const categoryRoutes = require("./routes/category.routes");
 const catalogRoutes = require("./routes/catalog.routes");
 const productRoutes = require("./routes/product.routes");
 const searchRoutes = require("./routes/search.routes");
@@ -23,6 +25,7 @@ const imagesRoutes = require("./routes/images.routes");
 const orderRoutes = require("./routes/order.routes");
 const authRoutes = require("./routes/auth.routes");
 
+app.use("/api/categories", categoryRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/catalog", catalogRoutes);
 app.use("/api/product", productRoutes);
