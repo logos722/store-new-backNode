@@ -1,3 +1,4 @@
+const { host } = require("../constants/url");
 const Product = require("../models/product.model");
 
 exports.getByCategory = async (req, res) => {
@@ -95,9 +96,7 @@ exports.getByCategory = async (req, res) => {
       name: p.name,
       description: p.description,
       price: p.price,
-      image: p.image
-        ? `http://backend:5000/images/${p.image.replace(/^\//, "")}`
-        : null,
+      image: p.image ? `${host}/images/${p.image.replace(/^\//, "")}` : null,
       stock: p.quantity,
       inStock: p.inStock,
     }));

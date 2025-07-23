@@ -1,3 +1,4 @@
+const { host } = require("../constants/url");
 const Product = require("../models/product.model");
 
 // Получить все
@@ -14,7 +15,7 @@ exports.getById = async (req, res) => {
       return res.status(404).json({ error: "Product not found" });
     }
     const imageUrl = prod.image
-      ? `http://backend:5000/images/${prod.image.replace(/^\//, "")}`
+      ? `${host}/images/${prod.image.replace(/^\//, "")}`
       : null;
 
     res.json({

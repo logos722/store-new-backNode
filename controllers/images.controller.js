@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const { host } = require("../constants/url");
 
 exports.getImageUrl = (req, res) => {
   const imgPath = req.query.path;
@@ -15,5 +16,5 @@ exports.getImageUrl = (req, res) => {
     return res.status(404).json({ error: "File not found" });
   }
   // отдадим фронту URL, по которому Express будет отдавать файл
-  res.json({ imageUrl: `http://backend:5000/images/${imgPath}` });
+  res.json({ imageUrl: `${host}/images/${imgPath}` });
 };
