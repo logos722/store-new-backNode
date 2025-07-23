@@ -1,1 +1,3 @@
-export const host = process.env.IMAGE_HOST || "";
+const host = process.env.IMAGE_HOST || "";
+
+module.exports = { host };
