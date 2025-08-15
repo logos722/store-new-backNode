@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "seed-xml": "node seed-from-xml.js"
+    "seed-xml": "node seed-from-xml.js",
+    "migrate:rebuild-search": "node rebuild-search-fields.js"
   },
   "keywords": [],
   "author": "",

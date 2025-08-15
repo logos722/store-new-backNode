@@ -3,7 +3,6 @@ const Product = require("../models/product.model");
 
 exports.getByCategory = async (req, res) => {
   try {
-    console.log("req", req.params, req.query);
     const groupId = req.params.category; // на самом деле это UUID группы
 
     const {
@@ -16,7 +15,6 @@ exports.getByCategory = async (req, res) => {
       sort,
     } = req.query;
 
-    console.log("req.query", req.query);
     // Парсим page и limit из query-параметров
     const pageNum = Math.max(1, parseInt(page, 10));
     const limitNum = Math.max(1, parseInt(limit, 10));
@@ -54,8 +52,6 @@ exports.getByCategory = async (req, res) => {
         : [categoryFilters];
       filter.category = { $in: arr };
     }
-
-    console.log("filter", filter);
 
     // Построение параметров сортировки
     let sortObj = {};

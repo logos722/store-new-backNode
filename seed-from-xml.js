@@ -1,9 +1,9 @@
-// seed-from-xml.js
 require("dotenv").config();
 const fs = require("fs/promises");
 const xml2js = require("xml2js");
 const mongoose = require("mongoose");
-const Product = require("./models/product.model"); // наша модель с полями image и description
+const Product = require("./models/product.model");
+const normalizeRu = require("./utils/normalizeRu");
 
 // Функция для парсинга XML в JS-объект
 async function parseXmlFile(path) {
@@ -87,6 +87,8 @@ async function run() {
       externalId: p.Ид,
       name: p.Наименование,
       fullName: p.Наименование,
+      name_search: normalizeRu(p.Наименование || ""),
+      fullName_search: normalizeRu(p.Наименование || ""),
       description,
       unit: p.БазоваяЕдиница._,
       unitCode: p.БазоваяЕдиница.Код,
