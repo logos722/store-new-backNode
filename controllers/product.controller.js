@@ -9,8 +9,12 @@ exports.getAll = async (req, res) => {
 
 // Получить по ID
 exports.getById = async (req, res) => {
+  const identifier = req.params.id;
+
   try {
-    const prod = await Product.findOne({ externalId: req.params.id });
+    const prod = await Product.findOne({
+      $or: [{ externalId: identifier }, { slug: identifier }],
+    });
     if (!prod) {
       return res.status(404).json({ error: "Product not found" });
     }
@@ -25,6 +29,9 @@ exports.getById = async (req, res) => {
       fullName: prod.fullName,
       price: prod.price,
       stock: prod.quantity,
+      slug: prod.slug,
+      groupId: prod.groupId,
+      category: prod.category,
       image: imageUrl,
       characteristics: {
         Вес: String(prod.weight),

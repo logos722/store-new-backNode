@@ -10,6 +10,7 @@ const ProductSchema = new mongoose.Schema({
   unit: { type: String },
   unitCode: { type: String },
   groupId: { type: String },
+  slug: { type: String, index: true },
   weight: { type: Number, default: 0 },
   quantity: { type: Number },
   description: { type: String },

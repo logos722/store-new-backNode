@@ -53,6 +53,7 @@ exports.search = async (req, res) => {
     const results = prods.map((p) => ({
       id: p.externalId ?? String(p._id),
       name: p.name,
+      slug: p.slug,
       fullName: p.fullName ?? null,
       description: p.description ?? null,
       price: p.price ?? null,

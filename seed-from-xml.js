@@ -5,6 +5,60 @@ const mongoose = require("mongoose");
 const Product = require("./models/product.model");
 const normalizeRu = require("./utils/normalizeRu");
 
+function generateSlug(text) {
+  if (!text) return "";
+
+  const cyrillicToLatin = {
+    а: "a",
+    б: "b",
+    в: "v",
+    г: "g",
+    д: "d",
+    е: "e",
+    ё: "yo",
+    ж: "zh",
+    з: "z",
+    и: "i",
+    й: "y",
+    к: "k",
+    л: "l",
+    м: "m",
+    н: "n",
+    о: "o",
+    п: "p",
+    р: "r",
+    с: "s",
+    т: "t",
+    у: "u",
+    ф: "f",
+    х: "h",
+    ц: "ts",
+    ч: "ch",
+    ш: "sh",
+    щ: "sch",
+    ъ: "",
+    ы: "y",
+    ь: "",
+    э: "e",
+    ю: "yu",
+    я: "ya",
+  };
+
+  const slug = text
+    .toLowerCase()
+    .split("")
+    .map((char) => cyrillicToLatin[char] || char)
+    .join("")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .trim();
+
+  // Ограничиваем длину до 100 символов (опционально)
+  return slug.length > 100 ? slug.substring(0, 100).replace(/-+$/, "") : slug;
+}
+
 // Функция для парсинга XML в JS-объект
 async function parseXmlFile(path) {
   const xml = await fs.readFile(path, "utf8");
@@ -63,6 +117,9 @@ async function run() {
         (r) => r.Наименование === "Полное наименование"
       )?.Значение ||
       "";
+
+    const slug = p.Наименование ? generateSlug(p.Наименование) : "";
+
     // Путь к картинке
     const image =
       p.Картинка ||
@@ -87,6 +144,7 @@ async function run() {
       externalId: p.Ид,
       name: p.Наименование,
       fullName: p.Наименование,
+      slug,
       name_search: normalizeRu(p.Наименование || ""),
       fullName_search: normalizeRu(p.Наименование || ""),
       description,

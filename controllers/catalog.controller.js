@@ -35,7 +35,7 @@ exports.getByCategory = async (req, res) => {
     }
 
     // Фильтр по наличию
-    if (inStock === "true") {
+    if (inStock == 1) {
       filter.quantity = { $gt: 0 };
     }
 
@@ -90,11 +90,12 @@ exports.getByCategory = async (req, res) => {
     const products = prods.map((p) => ({
       id: p.externalId,
       name: p.name,
+      slug: p.slug,
       description: p.description,
       price: p.price,
       image: p.image ? `${host}/images/${p.image.replace(/^\//, "")}` : null,
       stock: p.quantity,
-      inStock: p.inStock,
+      inStock: p.quantity > 0 ? true : false,
     }));
 
     const totalPages = Math.ceil(total / limit);
