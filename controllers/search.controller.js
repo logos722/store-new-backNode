@@ -45,7 +45,7 @@ exports.search = async (req, res) => {
     const prods = await Product.find({
       $or: [{ name_search: prefix }, { fullName_search: prefix }],
     })
-      .select("externalId name fullName description price image")
+      .select("externalId name slug fullName description price image")
       .lean()
       .skip((page - 1) * limit)
       .limit(limit);
