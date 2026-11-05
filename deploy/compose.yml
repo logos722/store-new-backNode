@@ -1,0 +1,63 @@
+name: gelion
+x-common: &common
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "3"}
+  security_opt: ["no-new-privileges:true"]
+services:
+  mongo:
+    <<: *common
+    image: mongo:8.0.16@sha256:4b58ebcb1dc7a7b4e84cd8ce9098d48764ae4478876898ff9551acf2ac4a6a6d
+    command: ["mongod", "--wiredTigerCacheSizeGB", "0.5"]
+    env_file: ./mongo.env
+    volumes:
+      - /opt/gelion/data/mongo:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/gelion.js:ro
+    networks: [database]
+    mem_limit: 1400m
+    healthcheck:
+      test: [CMD-SHELL, 'mongosh --quiet --host 127.0.0.1 --eval "quit(db.adminCommand({ping:1}).ok ? 0 : 1)"']
+      interval: 10s
+      timeout: 5s
+      retries: 12
+  backend:
+    <<: *common
+    image: ${BACKEND_IMAGE:?Set BACKEND_IMAGE to a GHCR digest}
+    env_file: ./backend.env
+    ports: ["127.0.0.1:5000:5000"]
+    volumes:
+      - /opt/gelion/data/images:/app/public/images:ro
+      - /opt/gelion/data/xml:/app/data:ro
+    networks: [application, database]
+    depends_on:
+      mongo: {condition: service_healthy}
+    mem_limit: 640m
+    cap_drop: [ALL]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:5000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+  frontend:
+    <<: *common
+    image: ${FRONTEND_IMAGE:?Set FRONTEND_IMAGE to a GHCR digest}
+    environment:
+      API_BASE_URL: http://backend:5000
+    ports: ["127.0.0.1:3000:3000"]
+    networks: [application]
+    mem_limit: 900m
+    cap_drop: [ALL]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+networks:
+  application:
+    ipam:
+      config: [{subnet: 172.30.55.0/24, gateway: 172.30.55.1}]
+  database:
+    internal: true

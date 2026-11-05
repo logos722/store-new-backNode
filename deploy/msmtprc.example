@@ -1,0 +1,11 @@
+defaults
+auth on
+tls on
+tls_starttls off
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+account default
+host smtp.example.com
+port 465
+user CHANGE_ME
+password CHANGE_ME
+from store@gelionaqua.ru

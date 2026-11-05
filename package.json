@@ -7,22 +7,32 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "seed-xml": "node seed-from-xml.js",
-    "migrate:rebuild-search": "node rebuild-search-fields.js"
+    "migrate:rebuild-search": "node rebuild-search-fields.js",
+    "test": "node --test",
+    "check": "node scripts/check.cjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^3.0.2",
-    "body-parser": "^2.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "exceljs": "^4.4.0",
     "express": "^5.1.0",
+    "express-rate-limit": "8.7.3",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.1",
-    "nodemailer": "^7.0.4",
+    "nodemailer": "10.3.1",
     "xml2js": "^0.6.2"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "11.1.1"
+    }
   }
 }

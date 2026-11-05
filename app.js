@@ -3,16 +3,31 @@ const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const connectDB = require("./config/db");
+const mongoose = require("mongoose");
+const { rateLimit } = require("express-rate-limit");
 
 const app = express();
+app.disable("x-powered-by");
+// Only the host gateway running Nginx and local development connections.
+app.set("trust proxy", ["loopback", "172.30.55.1"]);
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({ origin: process.env.PUBLIC_URL || "https://gelionaqua.ru" }));
+app.use(express.json({ limit: "256kb" }));
+app.get("/health/live", (_req, res) => res.json({ status: "ok" }));
+app.get("/health/ready", async (_req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) throw new Error("not ready");
+    await mongoose.connection.db.admin().ping();
+    res.json({ status: "ready" });
+  } catch { res.status(503).json({ status: "unavailable" }); }
+});
+app.use("/api/auth", rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false }));
+app.use("/api/orders", rateLimit({ windowMs: 60_000, limit: 10, standardHeaders: "draft-7", legacyHeaders: false }));
 
 app.use("/images", express.static(path.join(__dirname, "public", "images")));
 
 // Подключаем БД
-connectDB();
+if (require.main === module) connectDB();
 
 // Импорт роутов
 
@@ -35,4 +50,11 @@ app.use("/api/orders", orderRoutes);
 
 // Запуск
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+if (require.main === module) {
+  const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  for (const signal of ["SIGTERM", "SIGINT"]) process.on(signal, () => {
+    server.close(() => mongoose.disconnect().finally(() => process.exit(0)));
+    setTimeout(() => process.exit(1), 15000).unref();
+  });
+}
+module.exports = app;

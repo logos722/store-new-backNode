@@ -1,57 +1,93 @@
-name: Build&Deploy Backend
-
-permissions:
-  contents: read
-  packages: write
-
+name: Validate, build and deploy backend
 on:
   push:
     branches: [master]
-
-env:
-  REGISTRY: ghcr.io
-
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
-  build-and-push:
+  check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up QEMU (for multi‑arch)
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Login to GHCR
-        uses: docker/login-action@v2
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          registry: ${{ env.REGISTRY }}
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm run check
+      - run: npm test
+      - run: bash deploy/test/deploy.sh
+      - name: Validate server configuration
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+          shellcheck -e SC1091 deploy/bin/*.sh
+          for f in deploy/bin/*.sh; do bash -n "$f"; done
+          cp deploy/mongo.env.example deploy/mongo.env
+          cp .env.example deploy/backend.env
+          docker compose --env-file deploy/images.env.example -f deploy/compose.yml config --quiet
+
+      - name: Build production container and check liveness
+        run: |
+          docker build -t gelion-check .
+          docker run -d --name gelion-check -p 127.0.0.1:5000:5000 gelion-check
+          trap 'docker logs gelion-check; docker rm -f gelion-check' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5000/health/live; then exit 0; fi
+            sleep 2
+          done
+          exit 1
+  publish:
+    needs: check
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push backend image
-        uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        id: build
         with:
           context: .
-          file: Dockerfile
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/logos722/store-new-backnode:latest
+          tags: ghcr.io/logos722/store-new-backnode:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
-    needs: build-and-push
+    needs: publish
     runs-on: ubuntu-latest
+    environment: production
     steps:
-      - name: SSH Deploy
-        uses: appleboy/ssh-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            cd ~/project
-            sudo docker compose down
-            sudo docker compose pull
-            sudo docker compose up -d
+      - name: Deploy immutable image over verified SSH
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DIGEST: ${{ needs.publish.outputs.digest }}
+        run: |
+          set -euo pipefail
+          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$SSH_USER" == gelion-deploy ]]
+          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/gelion
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          trap 'rm -f ~/.ssh/gelion' EXIT
+          ssh -i ~/.ssh/gelion -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 "$SSH_USER@$SSH_HOST" "deploy backend $DIGEST"
