@@ -102,7 +102,7 @@ exports.getByCategory = async (req, res) => {
 
     res.json({ category: groupId, products, page: pageNum, totalPages, total });
   } catch (err) {
-    console.error(err);
+    console.error("Catalog lookup failed");
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

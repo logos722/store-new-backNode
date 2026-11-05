@@ -9,7 +9,7 @@ exports.list = async (req, res) => {
     });
     res.json({ categories });
   } catch (err) {
-    console.error("Categories fetch error:", err);
+    console.error("Categories fetch failed");
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
