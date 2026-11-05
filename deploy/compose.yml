@@ -8,7 +8,7 @@ x-common: &common
 services:
   mongo:
     <<: *common
-    image: mongo:8.0.16@sha256:4b58ebcb1dc7a7b4e84cd8ce9098d48764ae4478876898ff9551acf2ac4a6a6d
+    image: mongo:8.0.34@sha256:b9924c330a8bbc5800fe9c69f04a84e221eca7b28fd049a0354147d9908fa142
     command: ["mongod", "--wiredTigerCacheSizeGB", "0.5"]
     env_file: ./mongo.env
     volumes:
