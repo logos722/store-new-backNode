@@ -18,7 +18,7 @@ exports.register = async (req, res) => {
     const user = await User.create({ email, password: hash, name });
     res.status(201).json({ message: "User created", userId: user._id });
   } catch (err) {
-    console.error(err);
+    console.error("Registration failed");
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -37,7 +37,7 @@ exports.login = async (req, res) => {
     });
     res.json({ token });
   } catch (err) {
-    console.error(err);
+    console.error("Login failed");
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -48,7 +48,7 @@ exports.me = async (req, res) => {
     const user = await User.findById(req.user.userId).select("-password");
     res.json({ user });
   } catch (err) {
-    console.error(err);
+    console.error("Profile lookup failed");
     res.status(500).json({ error: "Server error" });
   }
 };

@@ -1,0 +1,32 @@
+name: External availability check
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: external-monitor
+  cancel-in-progress: false
+jobs:
+  monitor:
+    if: vars.MONITOR_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --omit=dev
+      - run: node scripts/monitor.cjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SMTP_HOST: ${{ secrets.MONITOR_SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.MONITOR_SMTP_PORT }}
+          SMTP_USER: ${{ secrets.MONITOR_SMTP_USER }}
+          SMTP_PASS: ${{ secrets.MONITOR_SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.MONITOR_EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.MONITOR_EMAIL_TO }}

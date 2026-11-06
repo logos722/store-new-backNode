@@ -1,0 +1,8 @@
+[Unit]
+Description=Daily Gelion backup
+[Timer]
+OnCalendar=*-*-* 03:00:00 Europe/Moscow
+RandomizedDelaySec=10m
+Persistent=true
+[Install]
+WantedBy=timers.target

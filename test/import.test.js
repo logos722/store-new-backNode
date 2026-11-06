@@ -1,0 +1,26 @@
+const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const fs=require('node:fs');
+const os=require('node:os');
+const path=require('node:path');
+const {spawnSync}=require('node:child_process');
+const script=path.resolve(__dirname,'../seed-from-xml.js');
+test('import requires explicit mode and validates files without database access', t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'gelion-import-'));
+  t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  fs.mkdirSync(path.join(root,'data'));
+  fs.mkdirSync(path.join(root,'public/images'),{recursive:true});
+  const invoke=(args)=>spawnSync(process.execPath,[script,...args],{cwd:root,encoding:'utf8',env:{...process.env,MONGO_URI:'mongodb://127.0.0.1:1/unreachable'},timeout:10000});
+  assert.equal(invoke([]).status,1);
+  const catalog=`<КоммерческаяИнформация><Классификатор><Свойства><Свойство><Ид>category</Ид><Наименование>Категория</Наименование></Свойство></Свойства></Классификатор><Каталог><Товары><Товар><Ид>sku-1</Ид><Наименование>Товар</Наименование><Картинка>sample.jpg</Картинка><БазоваяЕдиница Код="796">шт</БазоваяЕдиница><Группы><Ид>group</Ид></Группы><ЗначенияРеквизитов><ЗначениеРеквизита><Наименование>Вес</Наименование><Значение>1</Значение></ЗначениеРеквизита><ЗначениеРеквизита><Наименование>Полное наименование</Наименование><Значение>Товар</Значение></ЗначениеРеквизита></ЗначенияРеквизитов></Товар></Товары></Каталог></КоммерческаяИнформация>`;
+  const offers=`<КоммерческаяИнформация><ПакетПредложений><Предложения><Предложение><Ид>sku-1</Ид><Количество>2</Количество><Цены><Цена><ЦенаЗаЕдиницу>10</ЦенаЗаЕдиницу><Валюта>RUB</Валюта></Цена></Цены></Предложение></Предложения></ПакетПредложений></КоммерческаяИнформация>`;
+  fs.writeFileSync(path.join(root,'data/import.xml'),catalog);
+  fs.writeFileSync(path.join(root,'data/offers.xml'),offers);
+  assert.equal(invoke(['--validate-only']).status,1,'missing image must reject import');
+  fs.writeFileSync(path.join(root,'public/images/sample.jpg'),'fixture');
+  const valid=invoke(['--validate-only']);
+  assert.equal(valid.status,0,valid.stderr);
+  assert.match(valid.stdout,/Validated 1 products/);
+  fs.writeFileSync(path.join(root,'data/offers.xml'),offers.replace('>10<','>-1<'));
+  assert.equal(invoke(['--validate-only']).status,1,'negative price must reject import');
+});

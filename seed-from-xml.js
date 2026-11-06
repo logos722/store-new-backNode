@@ -4,6 +4,7 @@ const xml2js = require("xml2js");
 const mongoose = require("mongoose");
 const Product = require("./models/product.model");
 const normalizeRu = require("./utils/normalizeRu");
+const path = require("node:path");
 
 function generateSlug(text) {
   if (!text) return "";
@@ -70,11 +71,10 @@ async function parseXmlFile(path) {
 }
 
 async function run() {
-  // Подключаемся к MongoDB
-  await mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  const mode = process.argv[2];
+  if (!["--validate-only", "--replace-catalog"].includes(mode)) {
+    throw new Error("Explicit --validate-only or --replace-catalog required; use deploy/bin/import.sh for backup first");
+  }
 
   // Парсим XML-файлы
   const catalogData = await parseXmlFile("./data/import.xml");
@@ -164,15 +164,44 @@ async function run() {
     };
   });
 
-  // Очищаем и вставляем
-  await Product.deleteMany({});
-  await Product.insertMany(merged);
+  if (!merged.length) throw new Error("Refusing empty catalog");
+  const ids = new Set();
+  const documents = [];
+  const imagesRoot = path.resolve("public/images");
+  for (const product of merged) {
+    if (ids.has(product.externalId)) throw new Error("Duplicate externalId");
+    ids.add(product.externalId);
+    if (!Number.isFinite(product.price) || product.price < 0 || !Number.isFinite(product.quantity)) throw new Error("Invalid price or quantity");
+    if (product.image) {
+      const file = path.resolve(imagesRoot, product.image);
+      if (!file.startsWith(imagesRoot + path.sep)) throw new Error("Unsafe image path");
+      await fs.access(file);
+    }
+    const document = new Product(product);
+    await document.validate();
+    documents.push(document.toObject());
+  }
+  if (mode === "--validate-only") {
+    console.log(`Validated ${documents.length} products and image paths`);
+    return;
+  }
+  await mongoose.connect(process.env.MONGO_URI);
+  // Stage the complete replacement and indexes before an atomic rename.
+  const staging = mongoose.connection.db.collection(`products_import_${Date.now()}`);
+  try {
+    await staging.insertMany(documents);
+    for (const [keys, options] of Product.schema.indexes()) await staging.createIndex(keys, options);
+    await staging.rename(Product.collection.collectionName, { dropTarget: true });
+  } catch (error) {
+    await staging.drop().catch(() => {});
+    throw error;
+  }
 
   console.log(`Inserted ${merged.length} products with description and image`);
   await mongoose.disconnect();
 }
 
 run().catch((err) => {
-  console.error(err);
-  process.exit(1);
+  console.error("Catalog import failed:", err.message);
+  mongoose.disconnect().finally(() => process.exit(1));
 });

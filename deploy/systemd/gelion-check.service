@@ -1,0 +1,6 @@
+[Unit]
+Description=Gelion availability, disk, certificate and backup checks
+OnFailure=gelion-notify@%n.service
+[Service]
+Type=oneshot
+ExecStart=/opt/gelion/bin/check.sh

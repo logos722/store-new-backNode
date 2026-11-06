@@ -1,0 +1,9 @@
+[Unit]
+Description=Encrypted off-site Gelion backup
+After=gelion.service
+OnFailure=gelion-notify@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/gelion/bin/backup.sh
+TimeoutStartSec=2h

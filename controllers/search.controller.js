@@ -62,7 +62,7 @@ exports.search = async (req, res) => {
 
     return res.json({ query: qNorm, page, limit, results });
   } catch (err) {
-    console.error(err);
+    console.error("Product search failed");
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

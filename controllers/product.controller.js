@@ -40,7 +40,7 @@ exports.getById = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error(err);
+    console.error("Product lookup failed");
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

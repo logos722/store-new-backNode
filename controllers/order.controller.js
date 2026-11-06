@@ -345,7 +345,7 @@ const generateOrderExcelFile = async (
     return buffer;
   } catch (error) {
     // Логируем ошибку и пробрасываем дальше для обработки в вызывающем коде
-    console.error("❌ Error generating Excel file:", error);
+    console.error("Order notification operation failed");
     throw new Error(`Failed to generate Excel file: ${error.message}`);
   }
 };
@@ -354,7 +354,8 @@ exports.createOrder = async (req, res) => {
   let transporter;
 
   try {
-    const { items, totalPrice, customerInfo } = req.body;
+    const { items, customerInfo } = req.body;
+    const totalPrice = req.body.total;
 
     // 1) Валидация входных данных
     const validation = validateOrderData(req.body);
@@ -381,7 +382,7 @@ exports.createOrder = async (req, res) => {
     // 4) Сохраняем заказ в БД
     const order = new Order({
       items: transformedItems,
-      totalPrice,
+      total: totalPrice,
       customerInfo: {
         email: customerInfo.email,
         name: customerInfo.name,
@@ -398,10 +399,7 @@ exports.createOrder = async (req, res) => {
     try {
       transporter = createMailTransporter();
     } catch (transporterError) {
-      console.error(
-        "❌ Failed to create mail transporter:",
-        transporterError.message
-      );
+      console.error("Order notification operation failed");
       // Заказ сохранен, но email не отправлен - это не критичная ошибка
       return res.status(201).json({
         message: "Order created but email notification failed",
@@ -424,7 +422,7 @@ exports.createOrder = async (req, res) => {
         `✅ Excel file generated successfully (${excelBuffer.length} bytes)`
       );
     } catch (excelError) {
-      console.error("❌ Failed to generate Excel file:", excelError.message);
+      console.error("Order notification operation failed");
       // Заказ сохранен, но Excel файл не создан - это не критичная ошибка
       return res.status(201).json({
         message: "Order created but Excel file generation failed",
@@ -516,7 +514,7 @@ ${normalizedItems
 
       console.log(`✅ Email sent successfully: ${emailInfo.messageId}`);
     } catch (emailError) {
-      console.error("❌ Failed to send email:", emailError.message);
+      console.error("Order notification operation failed");
       // Заказ сохранен, но email не отправлен
       return res.status(201).json({
         message: "Order created but email notification failed",

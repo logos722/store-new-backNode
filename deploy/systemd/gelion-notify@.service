@@ -1,0 +1,5 @@
+[Unit]
+Description=Send Gelion failure notification
+[Service]
+Type=oneshot
+ExecStart=/opt/gelion/bin/notify.sh %i

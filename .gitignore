@@ -52,3 +52,10 @@ Thumbs.db
 *.sw?
 *.sublime-project
 *.sublime-wo*
+
+!.env.example
+.env.*
+!.env.example
+deploy/*.env
+!deploy/*.env.example
+deploy/secrets/
